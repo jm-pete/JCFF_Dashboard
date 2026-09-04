@@ -40,13 +40,13 @@ body {
 
 .bottom-banner {
   width: 100%;
-  margin-top: 60px;
   padding: 12px 24px;
   background: var(--banner-bg);
   color: var(--text);
   font-size: 13px;
   border-top: 1px solid #e6e6e6;
   box-sizing: border-box;
+  flex-shrink: 0;   /* never gets squeezed by the flex layout below */
 }
 
 /* =========================
@@ -121,12 +121,16 @@ table th, table td {
    matter how little content a tab has. */
 html, body {
   height: 100%;
+  overflow: hidden;   /* the page itself never scrolls -- only the
+                          content region between the banners will */
 }
 
 body {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;   /* a fixed height, not just a minimum, so nav +
+                       content + footer are always exactly one
+                       viewport tall combined */
 }
 
 /* navbarPage() renders the nav bar as a <nav>, then a SEPARATE
@@ -140,8 +144,17 @@ nav.navbar {
   margin-bottom: 0;
 }
 
+/* This is the middle "pane" of the sandwich -- nav bar on one side of
+   it, footer on the other, both pinned in place because <body> itself
+   doesn't scroll. This element absorbs whatever space is left
+   (flex: 1) and, once its content is taller than that space, scrolls
+   internally instead of pushing the footer down and off-screen. */
 nav ~ .container-fluid {
-  flex: 1 0 auto;   /* this is the part that grows and absorbs space */
+  flex: 1 1 auto;
+  min-height: 0;    /* without this, a flex child won't shrink below
+                        its content's natural height, which would
+                        silently disable the scrolling below */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -164,19 +177,57 @@ nav ~ .container-fluid {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* --- Vertical centering ---
-   Previously this was done by hand: padding on the nav links was
-   tuned in pixels to match a specific logo height + brand padding, so
-   every time the logo size changed, the padding math had to be
-   redone or the links drift off-center (which is what happened here).
-   Flexbox does this once, permanently: telling the row to align its
-   children on the center line means the brand and the tabs always
-   line up on their vertical midpoint, no matter how tall the logo is
-   or how much brand padding changes later. */
-.navbar-default > .container-fluid {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;   /* still allows the mobile hamburger to wrap/collapse */
+/* --- Vertical centering + custom collapse breakpoint (wide screens) ---
+   Two things live in this one breakpoint together, on purpose:
+   1) Vertical centering: padding on the nav links used to be tuned in
+      pixels to match a specific logo height, so every time the logo
+      size changed the padding math had to be redone or the links
+      drifted off-center. Flexbox does this once, permanently.
+   2) Bootstrap 3's default breakpoint for switching to the hamburger
+      is a fixed 768px, regardless of how much content is actually in
+      the bar -- so a narrow bar like ours (a logo, one line of title,
+      three tabs) collapses well before it needs to. The rules below
+      re-implement Bootstrap's own "wide screen" layout at 640px
+      instead of 768px.
+   Both need to change together -- applying flex to the outer
+   container at EVERY width (rather than just here, above 640px) was
+   what caused the dropdown to overlap the header instead of dropping
+   below it: turning Bootstrap's mobile menu into a flex item made it
+   squeeze in beside the header instead of wrapping underneath. Below
+   640px, none of this applies, and Bootstrap's native (unmodified)
+   collapse behavior takes over instead.
+   If you add more tabs later and it starts collapsing too early (or
+   stays open too long with fewer), 640px is the one number to
+   change. */
+@media (min-width: 640px) {
+  .navbar-default > .container-fluid {
+    display: flex;
+    align-items: center;
+  }
+
+  .navbar-default .navbar-toggle {
+    display: none;
+  }
+
+  .navbar-default .navbar-collapse.collapse {
+    display: block !important;
+    height: auto !important;
+    padding-bottom: 0;
+    overflow: visible !important;
+    border-top: 0;
+    box-shadow: none;
+    width: auto;
+  }
+
+  .navbar-default .navbar-nav {
+    display: flex;
+    float: none;
+    margin: 0;
+  }
+
+  .navbar-default .navbar-nav > li {
+    float: none;
+  }
 }
 
 .navbar-default .navbar-nav > li > a {
@@ -197,6 +248,32 @@ nav ~ .container-fluid {
   color: #ffffff !important;
 }
 
+/* --- Header row: brand + hamburger ---
+   .navbar-header holds the toggle button and the brand block
+   together (Shiny puts the button first in the markup, then the
+   brand) -- making IT a flex row, rather than touching the outer
+   container, keeps this alignment independent of whatever the
+   collapse panel below is doing, so it can't cause the overlap
+   problem again. This applies at every width, since the header row
+   itself always looks the same whether the menu is open or not.
+   `order` re-sequences the two flex children visually (brand first,
+   toggle second) without needing to reorder them in app.R, since the
+   toggle button actually comes first in the markup; margin-left: auto
+   then pushes the toggle all the way to the right edge of the row. */
+.navbar-header {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-default .navbar-brand {
+  order: 1;
+}
+
+.navbar-default .navbar-toggle {
+  order: 2;
+  margin: 0 15px 0 auto;
+}
+
 /* --- Brand block: logo + title, inline to the left of the tabs ---
    This is the tags$div(class = "brand-block", ...) passed as navbarPage()'s
    `title`, which Shiny places inside ".navbar-brand" for us. */
@@ -204,6 +281,7 @@ nav ~ .container-fluid {
   height: auto;
   padding: 12px 20px;
 }
+
 
 .brand-block {
   display: flex;
@@ -216,9 +294,20 @@ nav ~ .container-fluid {
 }
 
 /* .banner-text/.banner-title are the same classes the static report
-   used — reused here, just recolored to --primary (instead of the
-   white the old dark bar needed) so the title reads clearly on the
-   off-white background. */
+   used. Font-size/weight live here now (this is also the one place
+   to come back to if you want to resize the title again later);
+   color is set separately below since it depends on the bar's
+   background, which has changed a couple of times already. */
+.banner-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.banner-title {
+  font-size: 32px;
+  font-weight: 600;
+}
+
 .navbar-brand .banner-title {
   color: var(--primary);
 }
