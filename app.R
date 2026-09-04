@@ -23,8 +23,8 @@ library(reactable)
 library(gt)
 library(plotly)
 
-source("./config/constants.R")
-source("./config/ref_tbls.R")
+# source("./config/constants.R")
+# source("./config/ref_tbls.R")
 
 
 library(shiny)
