@@ -23,8 +23,8 @@ library(reactable)
 library(gt)
 library(plotly)
 
-source("./config/constants.R")
-source("./config/ref_tbls.R")
+# source("./config/constants.R")
+# source("./config/ref_tbls.R")
 
 
 library(shiny)
@@ -114,12 +114,12 @@ shinyApp(ui = ui, server = server)
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
-  # Study Timeline
-  previous_sunday <- Sys.Date() - (wday(Sys.Date())-1)
-  study_tl_wk <- seq.Date(study_week1, previous_sunday, by = 7)
-  
-  this_month <- floor_date(Sys.Date(), unit = "month")
-  study_tl_mo <- seq.Date(study_month1, this_month, by = "month")
+  # # Study Timeline
+  # previous_sunday <- Sys.Date() - (wday(Sys.Date())-1)
+  # study_tl_wk <- seq.Date(study_week1, previous_sunday, by = 7)
+  # 
+  # this_month <- floor_date(Sys.Date(), unit = "month")
+  # study_tl_mo <- seq.Date(study_month1, this_month, by = "month")
   
   
   
