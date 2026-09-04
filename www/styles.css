@@ -1,6 +1,6 @@
 /* =========================
    Theme Variables
-   Change these once to re-theme all reports
+   Change these once to re-theme the whole app
    ========================= */
 
 :root {
@@ -9,16 +9,12 @@
   --accent: #F2A65A;
   --text: #333333;
   --background: #ffffff;
+  --banner-bg: #FAFAFA;   /* crisp off-white for the nav bar + footer */
 }
 
 /* =========================
    Global Styling
    ========================= */
-   
-   
-.navbar-primary {
-  background-color: var(--primary) !important;
-}
 
 body {
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
@@ -30,40 +26,12 @@ body {
 
 /* Center report body slightly */
 .main-container {
-  max-width: 1100px;
-}
-
-/* =========================
-   Top Banner
-   ========================= */
-
-.top-banner {
   width: 100%;
-  background: var(--primary);
-  color: white;
-  padding: 16px 28px;
-  display: flex;
-  align-items: center;
-}
-
-.top-banner img {
-  height: 55px;
-  margin-right: 18px;
-}
-
-.banner-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.banner-title {
-  font-size: 26px;
-  font-weight: 600;
-}
-
-.banner-subtitle {
-  font-size: 14px;
-  opacity: 0.9;
+  max-width: none;   /* was 1100px in the original report; removed so
+                         tab content spans the full page width */
+  margin: 0 auto;
+  padding: 1px 24px;
+  box-sizing: border-box;
 }
 
 /* =========================
@@ -71,16 +39,14 @@ body {
    ========================= */
 
 .bottom-banner {
+  width: 100%;
   margin-top: 60px;
   padding: 12px 24px;
-  background: var(--primary);
-  color: white;
+  background: var(--banner-bg);
+  color: var(--text);
   font-size: 13px;
-}
-
-.bottom-banner img {
-  height: 55px;
-  margin-right: 18px;
+  border-top: 1px solid #e6e6e6;
+  box-sizing: border-box;
 }
 
 /* =========================
@@ -145,88 +111,114 @@ table th, table td {
 }
 
 /* =========================
-   Shiny-specific additions
-   (everything above this line is unchanged from the
-   original markdown-report stylesheet)
+   App shell (Shiny-specific)
    ========================= */
 
 /* --- Sticky footer setup ---
-   Make the page frame at least the full viewport height, and lay its
-   children out as a vertical stack (flexbox) so we can tell one of
-   them to absorb all the leftover space. */
+   Make <body> itself the flex column: the nav bar keeps its natural
+   height, the content block below it grows to absorb any unused
+   space, which is what pushes the footer down to the bottom edge no
+   matter how little content a tab has. */
 html, body {
   height: 100%;
 }
 
-/* Shiny's fluidPage() wraps everything in a Bootstrap ".container-fluid".
-   We turn that single wrapper into the flex column described above,
-   and strip its default side padding so .top-banner/.bottom-banner can
-   run edge-to-edge like they did in the static report. */
-.container-fluid {
+body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 0;
 }
 
-/* This wraps the nav pills + active tab's content. flex: 1 tells it to
-   grow and eat any unused vertical space, which is what pushes the
-   footer down to the bottom edge regardless of how much content exists. */
-.content-wrap {
-  flex: 1 0 auto;
+/* navbarPage() renders the nav bar as a <nav>, then a SEPARATE
+   ".container-fluid" (sibling of that <nav>) holding the tab content
+   and footer. There's also a small ".container-fluid" nested INSIDE
+   <nav> itself (around the brand + tab links) — "nav ~ .container-fluid"
+   (read: "a .container-fluid that comes after a nav") targets only the
+   outer one, leaving the nav's internal layout alone. */
+nav.navbar {
+  flex-shrink: 0;   /* nav bar keeps its own natural height */
+  margin-bottom: 0;
+}
+
+nav ~ .container-fluid {
+  flex: 1 0 auto;   /* this is the part that grows and absorbs space */
   display: flex;
   flex-direction: column;
+  padding: 0;
+  width: 100%;
 }
 
-/* Banner and footer should never stretch or shrink — they stay their
-   natural, fixed height no matter what the flex parent does. */
-.top-banner, .bottom-banner {
-  flex-shrink: 0;
+.tab-content {
+  flex: 1 0 auto;
+  width: 100%;
 }
 
-/* --- Nav bar (tabsetPanel type="pills") styling ---
-   Bootstrap renders tabsetPanel(type="pills") as <ul class="nav nav-pills">.
-   Scoped to .content-wrap so it only colors the tab-link strip itself,
-   not the white content area beneath it. */
-.content-wrap > .tabbable > .nav-pills {
-  background-color: var(--primary);
-  margin: 0;
-  padding: 10px 28px;
+/* --- Nav bar coloring (Bootstrap calls it ".navbar-default") ---
+   Light background now, so a hairline border + soft shadow does the
+   job the old solid color used to do: separating the bar from the
+   page beneath it. */
+.navbar-default {
+  background-color: var(--banner-bg) !important;
+  border: none;
+  border-bottom: 1px solid #e6e6e6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.content-wrap > .tabbable > .nav-pills > li > a {
-  color: rgba(255, 255, 255, 0.85);
-  border-radius: 4px;
+/* --- Vertical centering ---
+   Previously this was done by hand: padding on the nav links was
+   tuned in pixels to match a specific logo height + brand padding, so
+   every time the logo size changed, the padding math had to be
+   redone or the links drift off-center (which is what happened here).
+   Flexbox does this once, permanently: telling the row to align its
+   children on the center line means the brand and the tabs always
+   line up on their vertical midpoint, no matter how tall the logo is
+   or how much brand padding changes later. */
+.navbar-default > .container-fluid {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;   /* still allows the mobile hamburger to wrap/collapse */
 }
 
-.content-wrap > .tabbable > .nav-pills > li > a:hover,
-.content-wrap > .tabbable > .nav-pills > li > a:focus {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.15);
+.navbar-default .navbar-nav > li > a {
+  color: var(--text) !important;
+  padding-top: 15px;
+  padding-bottom: 15px;
 }
 
-.content-wrap > .tabbable > .nav-pills > li.active > a,
-.content-wrap > .tabbable > .nav-pills > li.active > a:hover,
-.content-wrap > .tabbable > .nav-pills > li.active > a:focus {
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+  color: var(--primary) !important;
+}
+
+.navbar-default .navbar-nav > .active > a,
+.navbar-default .navbar-nav > .active > a:hover,
+.navbar-default .navbar-nav > .active > a:focus {
   background-color: var(--secondary) !important;
   color: #ffffff !important;
 }
 
-/* Let the active tab's content grow with .content-wrap so the flex
-   math (and therefore the sticky footer) keeps working. */
-.content-wrap > .tabbable > .tab-content,
-.content-wrap > .tabbable {
-  flex: 1 0 auto;
-  display: flex;
-  flex-direction: column;
+/* --- Brand block: logo + title, inline to the left of the tabs ---
+   This is the tags$div(class = "brand-block", ...) passed as navbarPage()'s
+   `title`, which Shiny places inside ".navbar-brand" for us. */
+.navbar-default .navbar-brand {
+  height: auto;
+  padding: 12px 20px;
 }
 
-/* Recenter tab content, same idea as .main-container in the original
-   report, just also centered since Shiny's default container is
-   full-width (fluid) rather than fixed. */
-.main-container {
-  width: 100%;
-  margin: 0 auto;
-  padding: 30px 24px;
-  box-sizing: border-box;
+.brand-block {
+  display: flex;
+  align-items: center;
+}
+
+.brand-block img {
+  height: 60px;
+  margin-right: 14px;
+}
+
+/* .banner-text/.banner-title are the same classes the static report
+   used — reused here, just recolored to --primary (instead of the
+   white the old dark bar needed) so the title reads clearly on the
+   off-white background. */
+.navbar-brand .banner-title {
+  color: var(--primary);
 }
