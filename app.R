@@ -42,7 +42,7 @@ ui <- navbarPage(
   title = tags$div(class = "brand-block",
                    tags$img(src = "Just Care Strapline Full RGB + Reg.png", alt = "Logo"),
                    tags$div(class = "banner-text",
-                            tags$div(class = "banner-title", tags$b("JCAP"))
+                            tags$div(class = "banner-title", "JCAP")
                    )
   ),
   
@@ -58,7 +58,8 @@ ui <- navbarPage(
   # matter where it appears in the UI tree, so it's fine to drop it in
   # here alongside the tabPanel()s.
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
+    tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
+    tags$script(src = "custom.js")
   ),
   
   # Home: Current study conditions x county, Screening & Baseline timeline, weekly check-ins
